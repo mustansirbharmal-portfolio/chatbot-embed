@@ -200,4 +200,5 @@ def ask(query: str, model: str = "gpt-4", token_budget: int = 4096 - 100, print_
     return response_message.split('\n\n')
 
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=False, port=5000) 
+    app.run(host="0.0.0.0", port=port, debug=True)
+ 
