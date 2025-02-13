@@ -84,15 +84,28 @@ def embed():
 
 @app.route('/ask', methods=['POST'])
 def ask_route():
-    # Initialize services only when needed
-    initialize_pinecone()
-    initialize_embedding_model()
-    initialize_azure()
-    
-    data = request.get_json()
-    user_query = data.get('query')
-    response_message = ask(user_query, token_budget=4096 - 100, print_message=False)
-    return jsonify({"response": response_message})
+    try:
+        # Initialize services only when needed
+        initialize_pinecone()
+        initialize_embedding_model()
+        initialize_azure()
+        
+        data = request.get_json()
+        if not data or 'query' not in data:
+            return jsonify({"error": "No query provided"}), 400
+            
+        user_query = data.get('query')
+        if not user_query or not user_query.strip():
+            return jsonify({"error": "Empty query provided"}), 400
+            
+        response_message = ask(user_query, token_budget=4096 - 100, print_message=False)
+        if not response_message:
+            return jsonify({"error": "Failed to generate response"}), 500
+            
+        return jsonify({"response": response_message})
+    except Exception as e:
+        print(f"Error in /ask route: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
 
 def clean_text(text):
     cleaned_text = re.sub(r'<.*?>', '', text)
