@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chatbot Embed Code</title>
+    <style>
+        .code-block {
+            background: #f4f4f4;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .copy-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chatbot Embed Code</h1>
+    <p>Copy and paste the following code into your website where you want the chatbot to appear:</p>
+    
+    <h2>Step 1: Add this to your HTML (just before the closing &lt;/body&gt; tag):</h2>
+    <div class="code-block">
+        <pre><code>
+<!-- Chatbot Container -->
+&lt;div id="chatbot-container" style="display: none; position: fixed; bottom: 100px; right: 20px; width: 350px; height: 500px; background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); z-index: 1000;"&gt;
+    &lt;div style="background: #092AFC; color: white; padding: 10px; border-top-left-radius: 10px; border-top-right-radius: 10px; display: flex; justify-content: space-between; align-items: center;"&gt;
+        &lt;span&gt;Chat with AI&lt;/span&gt;
+        &lt;button onclick="toggleChatbot()" style="background: none; border: none; color: white; cursor: pointer;"&gt;✕&lt;/button&gt;
+    &lt;/div&gt;
+    &lt;div id="chatbot-messages" style="height: 380px; overflow-y: auto; padding: 10px;"&gt;&lt;/div&gt;
+    &lt;div style="padding: 10px; border-top: 1px solid #eee; display: flex;"&gt;
+        &lt;input type="text" id="chatbot-input" placeholder="Type your message..." style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-right: 8px;"&gt;
+        &lt;button onclick="sendMessage()" style="background: #092AFC; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;"&gt;Send&lt;/button&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+
+<!-- Chatbot Toggle Button -->
+&lt;button onclick="toggleChatbot()" style="position: fixed; bottom: 20px; right: 20px; background: #092AFC; color: white; border: none; padding: 15px; border-radius: 50%; cursor: pointer; box-shadow: 0 0 10px rgba(0,0,0,0.1); z-index: 1000;"&gt;
+    &lt;svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"&gt;
+        &lt;path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"&gt;&lt;/path&gt;
+    &lt;/svg&gt;
+&lt;/button&gt;
+
+&lt;script&gt;
+const CHATBOT_SERVER_URL = '{{ server_url }}';
+
+function toggleChatbot() {
+    const container = document.getElementById('chatbot-container');
+    container.style.display = container.style.display === 'none' ? 'block' : 'none';
+}
+
+function appendMessage(message, isUser) {
+    const messagesDiv = document.getElementById('chatbot-messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.style.margin = '10px 0';
+    messageDiv.style.padding = '10px';
+    messageDiv.style.borderRadius = '10px';
+    messageDiv.style.maxWidth = '80%';
+    messageDiv.style.alignSelf = isUser ? 'flex-end' : 'flex-start';
+    messageDiv.style.backgroundColor = isUser ? '#092AFC' : '#f0f0f0';
+    messageDiv.style.color = isUser ? 'white' : 'black';
+    messageDiv.style.marginLeft = isUser ? 'auto' : '0';
+    messageDiv.textContent = message;
+    messagesDiv.appendChild(messageDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function sendMessage() {
+    const input = document.getElementById('chatbot-input');
+    const message = input.value.trim();
+    if (!message) return;
+
+    appendMessage(message, true);
+    input.value = '';
+
+    // Send message to your Flask backend
+    fetch(`${CHATBOT_SERVER_URL}/ask`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query: message })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Handle array of messages
+        if (Array.isArray(data.response)) {
+            data.response.forEach(msg => appendMessage(msg, false));
+        } else {
+            appendMessage(data.response, false);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        appendMessage('Sorry, there was an error. Please try again.', false);
+    });
+}
+
+// Allow sending message with Enter key
+document.getElementById('chatbot-input').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+});
+&lt;/script&gt;
+        </code></pre>
+        <button class="copy-button" onclick="copyCode(this)">Copy Code</button>
+    </div>
+
+    <h2>Your Server URL</h2>
+    <p>Your chatbot server is running at: <strong>{{ server_url }}</strong></p>
+    <p>This code is already configured to use your server URL. Just copy and paste it into your website!</p>
+
+    <script>
+        function copyCode(element) {
+            const code = element.previousElementSibling.textContent;
+            navigator.clipboard.writeText(code);
+            element.textContent = 'Copied!';
+            setTimeout(() => {
+                element.textContent = 'Copy Code';
+            }, 2000);
+        }
+    </script>
+</body>
+</html> 
