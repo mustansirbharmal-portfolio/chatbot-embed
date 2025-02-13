@@ -51,65 +51,86 @@
 &lt;/button&gt;
 
 &lt;script&gt;
-const CHATBOT_SERVER_URL = '{{ server_url }}';
+// Wait for DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    const CHATBOT_SERVER_URL = '{{ server_url }}';
+    const chatInput = document.getElementById('chatbot-input');
 
-function toggleChatbot() {
-    const container = document.getElementById('chatbot-container');
-    container.style.display = container.style.display === 'none' ? 'block' : 'none';
-}
-
-function appendMessage(message, isUser) {
-    const messagesDiv = document.getElementById('chatbot-messages');
-    const messageDiv = document.createElement('div');
-    messageDiv.style.margin = '10px 0';
-    messageDiv.style.padding = '10px';
-    messageDiv.style.borderRadius = '10px';
-    messageDiv.style.maxWidth = '80%';
-    messageDiv.style.alignSelf = isUser ? 'flex-end' : 'flex-start';
-    messageDiv.style.backgroundColor = isUser ? '#092AFC' : '#f0f0f0';
-    messageDiv.style.color = isUser ? 'white' : 'black';
-    messageDiv.style.marginLeft = isUser ? 'auto' : '0';
-    messageDiv.textContent = message;
-    messagesDiv.appendChild(messageDiv);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-}
-
-function sendMessage() {
-    const input = document.getElementById('chatbot-input');
-    const message = input.value.trim();
-    if (!message) return;
-
-    appendMessage(message, true);
-    input.value = '';
-
-    // Send message to your Flask backend
-    fetch(`${CHATBOT_SERVER_URL}/ask`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ query: message })
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Handle array of messages
-        if (Array.isArray(data.response)) {
-            data.response.forEach(msg => appendMessage(msg, false));
-        } else {
-            appendMessage(data.response, false);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        appendMessage('Sorry, there was an error. Please try again.', false);
-    });
-}
-
-// Allow sending message with Enter key
-document.getElementById('chatbot-input').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        sendMessage();
+    // Add event listener only if element exists
+    if (chatInput) {
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
     }
+
+    window.toggleChatbot = function() {
+        const container = document.getElementById('chatbot-container');
+        if (container) {
+            container.style.display = container.style.display === 'none' ? 'block' : 'none';
+        }
+    };
+
+    window.appendMessage = function(message, isUser) {
+        const messagesDiv = document.getElementById('chatbot-messages');
+        if (!messagesDiv) return;
+
+        const messageDiv = document.createElement('div');
+        messageDiv.style.margin = '10px 0';
+        messageDiv.style.padding = '10px';
+        messageDiv.style.borderRadius = '10px';
+        messageDiv.style.maxWidth = '80%';
+        messageDiv.style.alignSelf = isUser ? 'flex-end' : 'flex-start';
+        messageDiv.style.backgroundColor = isUser ? '#092AFC' : '#f0f0f0';
+        messageDiv.style.color = isUser ? 'white' : 'black';
+        messageDiv.style.marginLeft = isUser ? 'auto' : '0';
+        messageDiv.textContent = message;
+        messagesDiv.appendChild(messageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    };
+
+    window.sendMessage = function() {
+        const input = document.getElementById('chatbot-input');
+        if (!input) return;
+
+        const message = input.value.trim();
+        if (!message) return;
+
+        appendMessage(message, true);
+        input.value = '';
+
+        // Send message to your Flask backend
+        fetch(`${CHATBOT_SERVER_URL}/ask`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ query: message })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data && data.response) {
+                // Handle array of messages
+                if (Array.isArray(data.response)) {
+                    data.response.forEach(msg => appendMessage(msg, false));
+                } else {
+                    appendMessage(data.response, false);
+                }
+            } else {
+                throw new Error('Invalid response format');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            appendMessage('Sorry, there was an error processing your request. Please try again.', false);
+        });
+    };
 });
 &lt;/script&gt;
         </code></pre>
